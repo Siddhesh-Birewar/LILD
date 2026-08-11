@@ -1,0 +1,967 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>Vector → Matrix Converter</title>
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js" crossorigin="anonymous"></script>
+    <style>
+        :root {
+            --primary: #4f46e5;
+            --secondary: #6366f1;
+            --card: #fff;
+            --text: #1f2937;
+            --muted: #6b7280;
+            --success: #16a34a;
+            --danger: #dc2626
+        }
+        * { box-sizing: border-box }
+        body {
+            margin: 0; min-height: 100vh;
+            font-family: "Segoe UI", system-ui, sans-serif;
+            background: radial-gradient(circle at top left,rgba(168,85,247,.18),transparent 40%),
+                        radial-gradient(circle at bottom right,rgba(139,92,246,.18),transparent 40%),
+                        linear-gradient(135deg,#eef2ff,#f8fafc);
+            display: flex; align-items: center; justify-content: center;
+            padding: 20px; color: var(--text)
+        }
+        .math-bg { position:fixed;inset:0;z-index:-1;overflow:hidden }
+        .math-bg span {
+            position:absolute;font-size:40px;font-weight:600;
+            color:rgba(79,70,229,.08);animation:floatMath 18s linear infinite;user-select:none
+        }
+        .math-bg span:nth-child(1){left:10%;animation-delay:0s}
+        .math-bg span:nth-child(2){left:20%;animation-delay:4s;font-size:55px}
+        .math-bg span:nth-child(3){left:35%;animation-delay:2s}
+        .math-bg span:nth-child(4){left:50%;animation-delay:6s;font-size:50px}
+        .math-bg span:nth-child(5){left:65%;animation-delay:1s}
+        .math-bg span:nth-child(6){left:75%;animation-delay:5s;font-size:45px}
+        .math-bg span:nth-child(7){left:85%;animation-delay:3s}
+        .math-bg span:nth-child(8){left:30%;animation-delay:7s;font-size:60px}
+        .math-bg span:nth-child(9){left:60%;animation-delay:9s}
+        @keyframes floatMath {
+            0%  {transform:translateY(110vh) rotate(0deg);opacity:0}
+            10% {opacity:1} 90%{opacity:1}
+            100%{transform:translateY(-10vh) rotate(360deg);opacity:0}
+        }
+        .container {
+            width:100%;max-width:750px;background:var(--card);
+            padding:30px;border-radius:16px;
+            box-shadow:0 20px 40px rgba(0,0,0,.08);animation:fadeIn .6s ease
+        }
+        @keyframes fadeIn{from{opacity:0;transform:translateY(20px)}to{opacity:1;transform:translateY(0)}}
+        h1{text-align:center;font-size:28px;margin-bottom:10px}
+        .subtitle{text-align:center;color:var(--muted);margin-bottom:30px}
+        label{font-weight:600;display:block;margin-bottom:6px}
+        input {
+            width:100%;padding:12px;border-radius:10px;
+            border:1px solid #d1d5db;font-size:15px;margin-bottom:18px
+        }
+        input:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(79,70,229,.15)}
+        button {
+            width:100%;padding:12px;border:none;border-radius:12px;
+            font-size:16px;font-weight:600;cursor:pointer;
+            background:linear-gradient(135deg,var(--primary),var(--secondary));
+            color:#fff;transition:transform .2s
+        }
+        button:hover{transform:translateY(-2px)}
+        button:active{transform:translateY(0)}
+        .section-title{margin-top:30px;font-size:18px;font-weight:700}
+        table{width:100%;border-collapse:collapse;margin-top:15px;border-radius:12px;overflow:hidden}
+        td{padding:12px;text-align:center;border:1px solid #e5e7eb}
+        tr:nth-child(even){background:#f9fafb}
+        .success{color:var(--success);font-weight:700}
+        .error{color:var(--danger);font-weight:700}
+
+        /* theory layer */
+        .theory-layer{position:fixed;inset:0;pointer-events:none;z-index:-2}
+        .orbit{position:absolute;width:300px;height:300px;border:2px dashed rgba(79,70,229,.12);border-radius:50%;animation:spin 40s linear infinite}
+        .orbit::after{content:'';position:absolute;top:-6px;left:50%;width:12px;height:12px;background:rgba(99,102,241,.4);border-radius:50%}
+        .orbit.one{top:10%;left:5%}.orbit.two{bottom:10%;right:5%;animation-duration:60s}
+        @keyframes spin{from{transform:rotate(0deg)}to{transform:rotate(360deg)}}
+        .graph-wave{position:absolute;width:500px;height:200px;border-bottom:3px solid rgba(79,70,229,.15);border-radius:50%;animation:waveMove 12s ease-in-out infinite alternate}
+        .graph-wave.one{top:70%;left:10%}.graph-wave.two{top:20%;right:10%;animation-duration:18s}
+        @keyframes waveMove{from{transform:translateX(0)}to{transform:translateX(80px)}}
+        .big-theory{position:absolute;font-size:120px;font-weight:800;color:rgba(79,70,229,.04);animation:floatTheory 20s ease-in-out infinite alternate}
+        .big-theory.one{display:none}.big-theory.two{bottom:25%;right:15%;animation-duration:28s}
+        @keyframes floatTheory{from{transform:translateY(0)}to{transform:translateY(-60px)}}
+        .gravity-field{position:absolute;width:600px;height:600px;border-radius:50%;background:radial-gradient(circle at center,rgba(79,70,229,.18),rgba(79,70,229,.1),rgba(79,70,229,.04),transparent 70%);animation:pulseGravity 16s ease-in-out infinite}
+        .gravity-field.one{top:5%;left:-10%}.gravity-field.two{bottom:-15%;right:-10%;animation-duration:22s}
+        @keyframes pulseGravity{0%{transform:scale(1);opacity:.5}50%{transform:scale(1.1);opacity:.7}100%{transform:scale(1);opacity:.5}}
+        .space-grid{position:absolute;width:100%;height:100%;background-image:linear-gradient(rgba(79,70,229,.05) 1px,transparent 1px),linear-gradient(90deg,rgba(79,70,229,.05) 1px,transparent 1px);background-size:60px 60px;transform-origin:center;animation:warpGrid 30s linear infinite}
+        @keyframes warpGrid{0%{transform:scale(1) rotate(0deg)}50%{transform:scale(1.05) rotate(.5deg)}100%{transform:scale(1) rotate(0deg)}}
+        .gravity-curve{position:absolute;width:500px;height:300px;border:3px solid rgba(79,70,229,.15);border-color:rgba(79,70,229,.15) transparent transparent transparent;border-radius:50% 50% 0 0;animation:curveDrift 18s ease-in-out infinite alternate}
+        .gravity-curve.one{top:15%;right:8%}.gravity-curve.two{bottom:20%;left:10%;animation-duration:26s}
+        @keyframes curveDrift{from{transform:translateY(0) rotate(0deg)}to{transform:translateY(-40px) rotate(6deg)}}
+
+        /* login */
+        #loginPage {
+            width:100%;max-width:460px;background:var(--card);
+            padding:42px 36px 36px;border-radius:20px;
+            box-shadow:0 24px 60px rgba(79,70,229,.14),0 4px 16px rgba(0,0,0,.06);
+            animation:fadeIn .7s ease;position:relative;overflow:hidden;
+        }
+        #loginPage::before{content:'';position:absolute;top:0;left:0;right:0;height:5px;background:linear-gradient(90deg,#4f46e5,#8b5cf6,#6366f1);border-radius:20px 20px 0 0}
+        .login-logo{text-align:center;margin-bottom:8px}
+        .login-logo span{display:inline-block;width:64px;height:64px;border-radius:18px;background:linear-gradient(135deg,#4f46e5,#8b5cf6);font-size:30px;line-height:64px;box-shadow:0 8px 20px rgba(79,70,229,.32)}
+        .login-title{text-align:center;font-size:24px;font-weight:800;color:#1f2937;margin:10px 0 4px;letter-spacing:-.4px}
+        .login-sub{text-align:center;color:var(--muted);font-size:14px;margin-bottom:28px}
+        .irow{display:grid;grid-template-columns:1fr 1fr;gap:14px;margin-bottom:18px}
+        .irow .iwrap{margin-bottom:0}
+        .iwrap{position:relative;margin-bottom:18px}
+        .iwrap .ico{position:absolute;left:13px;top:50%;transform:translateY(-50%);font-size:15px;pointer-events:none;line-height:1}
+        .iwrap input,.iwrap select{padding-left:40px;margin-bottom:0}
+        select{width:100%;padding:12px 12px 12px 40px;border-radius:10px;border:1px solid #d1d5db;font-size:15px;background:#fff;color:var(--text);appearance:none;cursor:pointer;font-family:inherit}
+        select:focus{outline:none;border-color:var(--primary);box-shadow:0 0 0 3px rgba(79,70,229,.15)}
+        .login-btn{margin-top:6px;background:linear-gradient(135deg,#4f46e5,#7c3aed);font-size:16px;font-weight:700;letter-spacing:.2px;box-shadow:0 6px 20px rgba(79,70,229,.36);display:flex;align-items:center;justify-content:center;gap:8px}
+        .login-btn:hover{box-shadow:0 10px 28px rgba(79,70,229,.46)}
+        #loginErr{display:none;color:var(--danger);font-size:13px;font-weight:600;text-align:center;background:#fef2f2;padding:10px;border-radius:8px;border:1px solid #fecaca;margin-bottom:14px}
+        .ferr{color:var(--danger);font-size:12px;display:none;margin:-14px 0 10px 4px}
+        @keyframes slideOutL{from{opacity:1;transform:translateX(0) scale(1)}to{opacity:0;transform:translateX(-60px) scale(.97)}}
+        @keyframes slideInR{from{opacity:0;transform:translateX(60px) scale(.97)}to{opacity:1;transform:translateX(0) scale(1)}}
+        .slide-out{animation:slideOutL .42s ease forwards}
+        .slide-in{animation:slideInR .55s ease forwards}
+        #welcomeBadge{display:none;background:linear-gradient(135deg,#eef2ff,#f5f3ff);border:1px solid #c7d2fe;border-radius:10px;padding:12px 16px;margin-bottom:22px;font-size:14px;color:#4338ca;font-weight:600;text-align:center}
+
+        /* Admin button */
+        #adminToggleBtn {
+            position: fixed; top: 16px; right: 16px; z-index: 1000;
+            width: auto; padding: 8px 16px; font-size: 13px; font-weight: 700;
+            background: linear-gradient(135deg,#1e1b4b,#4338ca);
+            border-radius: 10px; box-shadow: 0 4px 14px rgba(67,56,202,.4);
+            display: flex; align-items: center; gap: 6px; cursor: pointer;
+        }
+        #adminToggleBtn:hover { transform: translateY(-2px) }
+
+        /* Student Dashboard button */
+        #studentDashBtn {
+            position: fixed; top: 16px; right: 145px; z-index: 1000;
+            width: auto; padding: 8px 16px; font-size: 13px; font-weight: 700;
+            background: linear-gradient(135deg,#059669,#10b981);
+            border-radius: 10px; box-shadow: 0 4px 14px rgba(5,150,105,.4);
+            display: none; align-items: center; gap: 6px; cursor: pointer;
+        }
+        #studentDashBtn:hover { transform: translateY(-2px) }
+
+        /* Admin Panel */
+        #adminPanel, #studentDashPanel {
+            display: none; position: fixed; inset: 0; z-index: 2000;
+            background: rgba(15,10,40,.6); backdrop-filter: blur(8px);
+            align-items: center; justify-content: center; padding: 20px;
+        }
+        #adminPanel.open, #studentDashPanel.open { display: flex }
+        #adminBox, #studentDashBox {
+            width: 100%; max-width: 1000px; max-height: 90vh;
+            background: #fff; border-radius: 20px;
+            box-shadow: 0 30px 80px rgba(0,0,0,.25);
+            overflow: hidden; display: flex; flex-direction: column;
+            animation: fadeIn .4s ease;
+        }
+        #adminHeader, #studentDashHeader {
+            background: linear-gradient(135deg,#1e1b4b,#4338ca);
+            padding: 20px 28px; display: flex; align-items: center; justify-content: space-between;
+        }
+        #studentDashHeader { background: linear-gradient(135deg,#065f46,#059669) }
+        #adminHeader h2, #studentDashHeader h2 { margin:0; color:#fff; font-size:20px; display:flex; align-items:center; gap:10px }
+        .close-btn {
+            background: rgba(255,255,255,.15); border:none; color:#fff;
+            border-radius: 8px; padding: 6px 14px; font-size:14px; font-weight:700; cursor:pointer;
+            transition:.2s;
+        }
+        .close-btn:hover { background:rgba(255,255,255,.28); transform:none }
+        #adminBody, #studentDashBody { padding: 24px 28px; overflow-y:auto; flex:1 }
+        #adminLogin { text-align:center; padding: 20px 0 }
+        #adminLogin p { color:var(--muted); margin-bottom:16px }
+        #adminLogin input { max-width:260px; margin:0 auto 14px; display:block }
+        #adminLogin button { max-width:200px; margin:0 auto }
+        #adminPwErr { color:var(--danger); font-size:13px; margin-top:8px; font-weight:600 }
+
+        /* Config panel */
+        #configPanel {
+            background: linear-gradient(135deg,#fefce8,#fffbeb);
+            border: 1px solid #fde68a; border-radius: 14px;
+            padding: 20px; margin-bottom: 20px;
+        }
+        #configPanel h3 { margin: 0 0 12px; color: #92400e; font-size: 16px }
+        #configPanel .cfg-row { display: grid; grid-template-columns: 1fr 1fr; gap: 10px; margin-bottom: 10px }
+        #configPanel input { margin-bottom: 0; font-size: 13px; padding: 9px 12px }
+        #configPanel label { font-size: 12px; color: #78350f; margin-bottom: 4px }
+        #configPanel .save-cfg { background: linear-gradient(135deg,#f59e0b,#d97706); font-size: 13px; padding: 9px; border-radius: 8px; width: auto; min-width: 140px }
+        #configPanel .cfg-status { font-size: 12px; margin-top: 8px; color: #059669; font-weight: 600; display: none }
+
+        /* Stats */
+        .admin-stats {
+            display: grid; grid-template-columns: repeat(auto-fit,minmax(140px,1fr));
+            gap: 12px; margin-bottom: 24px;
+        }
+        .stat-card {
+            background: linear-gradient(135deg,#eef2ff,#f0f9ff);
+            border: 1px solid #c7d2fe; border-radius: 12px;
+            padding: 14px 16px; text-align: center;
+        }
+        .stat-card .sv { font-size: 28px; font-weight: 800; color: #4338ca }
+        .stat-card .sl { font-size: 12px; color: var(--muted); font-weight: 600; margin-top: 2px }
+
+        /* Admin table */
+        .admin-table-wrap { overflow-x: auto; border-radius: 12px; border: 1px solid #e5e7eb }
+        #studentTable { width:100%; border-collapse: collapse; font-size:13px; margin-top:0 }
+        #studentTable thead tr { background: linear-gradient(135deg,#1e1b4b,#4338ca); color:#fff }
+        #studentTable thead td { padding:10px 12px; font-weight:700; border:none; text-align:left }
+        #studentTable tbody tr:hover { background: #eef2ff }
+        #studentTable tbody td { padding:10px 12px; border-bottom:1px solid #f3f4f6; text-align:left }
+        .badge {
+            display:inline-block; padding:3px 10px; border-radius:20px;
+            font-size:11px; font-weight:700;
+        }
+        .badge.green  { background:#dcfce7; color:#15803d }
+        .badge.red    { background:#fee2e2; color:#b91c1c }
+        .badge.yellow { background:#fef3c7; color:#92400e }
+        .badge.blue   { background:#dbeafe; color:#1e40af }
+        .badge.purple { background:#ede9fe; color:#6d28d9 }
+
+        /* Toolbar */
+        .admin-toolbar {
+            display: flex; align-items: center; gap: 10px;
+            margin-bottom: 16px; flex-wrap: wrap;
+        }
+        .admin-toolbar input {
+            margin-bottom:0; max-width:240px; padding:9px 14px; font-size:13px
+        }
+        .admin-toolbar button {
+            width:auto; padding:9px 16px; font-size:13px; border-radius:8px
+        }
+        .export-btn { background:linear-gradient(135deg,#059669,#10b981) }
+        .clear-btn  { background:linear-gradient(135deg,#dc2626,#f87171) }
+        .refresh-btn { background:linear-gradient(135deg,#4f46e5,#6366f1) }
+
+        /* Student Dashboard */
+        .student-profile-card {
+            background: linear-gradient(135deg,#eef2ff,#f0fdf4);
+            border: 1px solid #c7d2fe; border-radius: 14px;
+            padding: 20px; margin-bottom: 20px;
+            display: grid; grid-template-columns: auto 1fr; gap: 16px; align-items: center;
+        }
+        .student-avatar {
+            width: 64px; height: 64px; border-radius: 16px;
+            background: linear-gradient(135deg,#4f46e5,#8b5cf6);
+            display: flex; align-items: center; justify-content: center;
+            font-size: 28px; font-weight: 800; color: #fff;
+        }
+        .student-info h3 { margin: 0 0 4px; font-size: 18px; color: #1f2937 }
+        .student-info p { margin: 0; font-size: 13px; color: var(--muted) }
+        .student-meta { display: flex; gap: 8px; margin-top: 6px; flex-wrap: wrap }
+
+        .question-cards { display: grid; gap: 14px; margin-bottom: 24px }
+        .q-card {
+            border-radius: 12px; padding: 18px 20px;
+            border: 1px solid #e5e7eb; background: #fff;
+            display: grid; grid-template-columns: 40px 1fr auto; gap: 14px; align-items: center;
+            box-shadow: 0 2px 8px rgba(0,0,0,.04);
+        }
+        .q-icon {
+            width: 40px; height: 40px; border-radius: 10px;
+            display: flex; align-items: center; justify-content: center;
+            font-size: 18px; font-weight: 700;
+        }
+        .q-icon.correct { background: #dcfce7; color: #16a34a }
+        .q-icon.wrong   { background: #fee2e2; color: #dc2626 }
+        .q-icon.pending { background: #f3f4f6; color: #9ca3af }
+        .q-title { font-weight: 700; font-size: 15px; margin-bottom: 3px }
+        .q-desc  { font-size: 13px; color: var(--muted) }
+        .q-marks { font-size: 20px; font-weight: 800; color: #4f46e5 }
+        .q-marks.wrong { color: #dc2626 }
+        .q-marks.pending { color: #9ca3af }
+
+        .score-ring-wrap { display: flex; justify-content: center; margin: 20px 0 }
+        .score-ring {
+            width: 140px; height: 140px; border-radius: 50%;
+            background: conic-gradient(#4f46e5 0%, #e5e7eb 0%);
+            display: flex; align-items: center; justify-content: center;
+            position: relative;
+        }
+        .score-ring-inner {
+            width: 100px; height: 100px; border-radius: 50%;
+            background: #fff; display: flex; flex-direction: column;
+            align-items: center; justify-content: center;
+        }
+        .score-ring-inner .big { font-size: 26px; font-weight: 800; color: #1f2937; line-height: 1 }
+        .score-ring-inner .small { font-size: 12px; color: var(--muted); margin-top: 2px }
+
+        /* Supabase setup note */
+        .setup-note {
+            background: linear-gradient(135deg,#fff7ed,#fffbeb);
+            border: 1px solid #fed7aa; border-radius: 12px;
+            padding: 16px 18px; margin-bottom: 20px; font-size: 13px;
+        }
+        .setup-note strong { color: #c2410c }
+        .setup-note code {
+            background: #fef3c7; border-radius: 4px; padding: 1px 6px;
+            font-size: 12px; color: #92400e; font-family: monospace;
+        }
+
+        /* Toast */
+        #toast {
+            position:fixed; bottom:24px; right:24px; z-index:9999;
+            background:#1e1b4b; color:#fff; padding:12px 20px; border-radius:12px;
+            font-size:14px; font-weight:600; box-shadow:0 8px 24px rgba(0,0,0,.2);
+            opacity:0; transform:translateY(12px); transition:.3s; pointer-events:none;
+        }
+        #toast.show { opacity:1; transform:translateY(0) }
+
+        /* Loading spinner */
+        .spinner {
+            display: inline-block; width: 18px; height: 18px;
+            border: 2px solid rgba(255,255,255,.3); border-top-color: #fff;
+            border-radius: 50%; animation: spin-it .6s linear infinite;
+        }
+        @keyframes spin-it { to { transform: rotate(360deg) } }
+
+        .db-status {
+            position: fixed; top: 16px; left: 16px; z-index: 1000;
+            padding: 6px 12px; border-radius: 8px; font-size: 12px; font-weight: 700;
+            display: flex; align-items: center; gap: 6px;
+        }
+        .db-status.connected { background: #dcfce7; color: #15803d; border: 1px solid #bbf7d0 }
+        .db-status.disconnected { background: #fee2e2; color: #b91c1c; border: 1px solid #fecaca }
+        .db-status.checking { background: #fef3c7; color: #92400e; border: 1px solid #fde68a }
+        .dot { width: 8px; height: 8px; border-radius: 50%; background: currentColor }
+    </style>
+</head>
+<body>
+
+<!-- Backgrounds -->
+<div class="theory-layer">
+    <div class="space-grid"></div>
+    <div class="gravity-field one"></div><div class="gravity-field two"></div>
+    <div class="orbit one"></div><div class="orbit two"></div>
+    <div class="graph-wave one"></div><div class="graph-wave two"></div>
+    <div class="gravity-curve one"></div><div class="gravity-curve two"></div>
+    <div class="big-theory one">RANK</div><div class="big-theory two">ℝⁿ</div>
+</div>
+<div class="math-bg">
+    <span>∑</span><span>∫</span><span>λ</span><span>⊕</span><span>⊗</span><span>→</span><span>ℝ</span><span>μ</span><span>∇</span>
+</div>
+
+<!-- DB Status -->
+<div id="dbStatus" class="db-status checking"><div class="dot"></div> Checking DB…</div>
+
+<!-- Buttons -->
+<button id="adminToggleBtn" onclick="openAdminPanel()">🗄️ Admin DB</button>
+<button id="studentDashBtn" onclick="openStudentDash()">📊 My Dashboard</button>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- ═══ LOGIN PAGE ═══ -->
+<div id="loginPage">
+    <div class="login-logo"><span>🎓</span></div>
+    <div class="login-title">Student Login</div>
+    <div class="login-sub">Enter your details to access the Linear Algebra Tool</div>
+
+    <!-- Supabase Config (collapsible) -->
+    <div id="configPanel">
+        <h3>⚙️ Supabase Configuration</h3>
+        <p style="font-size:12px;color:#78350f;margin:0 0 12px">Enter your Supabase project credentials once to enable database storage.</p>
+        <div class="cfg-row">
+            <div>
+                <label>Supabase URL</label>
+                <input type="url" id="cfgUrl" placeholder="https://xxxx.supabase.co" />
+            </div>
+            <div>
+                <label>Anon Key</label>
+                <input type="text" id="cfgKey" placeholder="eyJhbGciOiJIUzI1NiIs..." />
+            </div>
+        </div>
+        <div style="display:flex;gap:10px;align-items:center">
+            <button class="save-cfg" onclick="saveConfig()">💾 Save & Test Connection</button>
+            <div id="cfgStatus" class="cfg-status"></div>
+        </div>
+        <div class="setup-note" style="margin-top:12px;margin-bottom:0">
+            <strong>📋 Setup Instructions:</strong><br>
+            1. Go to <strong>supabase.com</strong> → New Project<br>
+            2. In SQL Editor, run: <code>CREATE TABLE students ( id uuid DEFAULT gen_random_uuid() PRIMARY KEY, name text, roll text, email text, branch text, sem text, dob text, score int DEFAULT 0, total_marks int DEFAULT 0, li_ld_result text DEFAULT '—', rank_correct bool DEFAULT false, type_correct bool DEFAULT false, relation_correct bool DEFAULT false, completed bool DEFAULT false, login_time timestamptz DEFAULT now(), vectors jsonb, matrix jsonb );</code><br>
+            3. Settings → API → copy URL + anon key above
+        </div>
+    </div>
+
+    <div class="irow">
+        <div class="iwrap"><span class="ico">👤</span><input type="text" id="sName" placeholder="Full Name" autocomplete="name"/></div>
+        <div class="iwrap"><span class="ico">🔢</span><input type="text" id="sRoll" placeholder="Roll Number" autocomplete="off"/></div>
+    </div>
+    <div class="iwrap"><span class="ico">✉️</span><input type="email" id="sEmail" placeholder="Institute Email" autocomplete="email"/></div>
+    <div class="ferr" id="emailErr">Enter a valid email address.</div>
+    <div class="irow">
+        <div class="iwrap">
+            <span class="ico">📚</span>
+            <select id="sBranch"><option value="" disabled selected>Branch</option>
+                <option>AI &amp; ML</option><option>Computer Science</option><option>Data Science</option>
+                <option>Electronics</option><option>Mechanical</option><option>Civil</option><option>Other</option>
+            </select>
+        </div>
+        <div class="iwrap">
+            <span class="ico">📅</span>
+            <select id="sSem"><option value="" disabled selected>Semester</option>
+                <option>1st</option><option>2nd</option><option>3rd</option><option>4th</option>
+                <option>5th</option><option>6th</option><option>7th</option><option>8th</option>
+            </select>
+        </div>
+    </div>
+    <div class="iwrap"><span class="ico">🎂</span><input type="date" id="sDob" style="color:var(--muted)"/></div>
+    <div id="loginErr">⚠️ Please fill in all required fields correctly.</div>
+    <button class="login-btn" onclick="handleLogin()"><span>Start Session</span><span id="loginSpinner"></span><span>→</span></button>
+    <p style="text-align:center;font-size:12px;color:#9ca3af;margin-top:18px;margin-bottom:0">
+        Session data is saved to Supabase for teacher review.
+    </p>
+</div>
+
+<!-- ═══ MAIN APP ═══ -->
+<div class="container" id="mainApp" style="display:none">
+    <div id="welcomeBadge"></div>
+    <h1>Vector → Matrix Converter</h1>
+    <p class="subtitle">Convert vectors into a matrix and verify its rank</p>
+    <label>Number of Vectors</label><input type="number" id="numVectors" min="1"/>
+    <label>Dimension of Each Vector</label><input type="number" id="dimension" min="1"/>
+    <button onclick="generateInputs()">Generate Input Fields</button>
+    <div id="vectorInputs"></div>
+    <button id="makeMatrixBtn" onclick="createMatrix()" style="display:none;margin-top:15px">Show Matrix</button>
+    <h2 id="matrixTitle" style="display:none">Matrix</h2>
+    <div id="matrixOutput"></div>
+    <div id="rankSection" style="display:none">
+        <h2>Enter Rank of the Matrix</h2>
+        <input type="number" id="matrixRank" min="0"/>
+        <div style="display:flex;gap:10px;margin-bottom:15px">
+            <button onclick="submitRank()" style="flex:1">Submit Rank</button>
+            <button onclick="showRankSteps()" style="flex:1;background:linear-gradient(135deg,#8b5cf6,#a78bfa)">Show Steps</button>
+        </div>
+        <div id="rankResult"></div>
+        <button id="reenterRankBtn" onclick="reenterRank()" style="display:none;margin-top:10px;background:linear-gradient(135deg,#f59e0b,#f97316)">Re-enter Rank</button>
+        <div id="rankStepsOutput" style="display:none;margin-top:15px;padding:15px;background:#fef2f2;border-left:4px solid #4f46e5;border-radius:8px;overflow-x:auto;"></div>
+    </div>
+    <div id="relationTypeSection" style="display:none">
+        <h2>Are the vectors Linearly Independent or Dependent?</h2>
+        <div style="display:flex;gap:10px;margin-bottom:15px">
+            <button onclick="submitRelationType('LI')" style="flex:1">Linearly Independent (LI)</button>
+            <button onclick="submitRelationType('LD')" style="flex:1">Linearly Dependent (LD)</button>
+        </div>
+        <div id="relationTypeResult"></div>
+        <button id="reenterTypeBtn" onclick="reenterType()" style="display:none;margin-top:10px;background:linear-gradient(135deg,#f59e0b,#f97316)">Re-enter Type</button>
+    </div>
+    <div id="relationSection" style="display:none">
+        <h2>Linear Dependence Relation</h2>
+        <p style="color:var(--muted);margin-bottom:15px">Enter the relation as coefficients (e.g., "2 -3 1" means 2v₁ - 3v₂ + 1v₃ = 0)</p>
+        <input type="text" id="relationInput" placeholder="c₁ c₂ c₃ ..."/>
+        <div style="display:flex;gap:10px;margin-bottom:15px">
+            <button onclick="submitRelation()" style="flex:1">Submit Relation</button>
+            <button onclick="showSolution()" style="flex:1;background:linear-gradient(135deg,#8b5cf6,#a78bfa)">Show Solution</button>
+        </div>
+        <div id="relationResult"></div>
+        <button id="reenterRelationBtn" onclick="reenterRelation()" style="display:none;margin-top:10px;background:linear-gradient(135deg,#f59e0b,#f97316)">Re-enter Relation</button>
+        <div id="solutionOutput" style="display:none;margin-top:15px;padding:15px;background:#fef2f2;border-left:4px solid #dc2626;border-radius:8px"></div>
+    </div>
+    <div id="scoreSection" style="display:none;margin-top:30px;padding:20px;background:linear-gradient(135deg,#eef2ff,#f0f9ff);border-radius:12px">
+        <h2 style="margin-top:0">Score: <span id="score">0</span> / <span id="totalMarks">2</span> marks</h2>
+        <div id="breakdown" style="margin-top:15px;padding:15px;background:#fff;border-radius:8px;border-left:4px solid #4f46e5">
+            <h3 style="margin-top:0;font-size:16px;color:#4f46e5">Score Breakdown:</h3>
+            <div id="breakdownDetails"></div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ ADMIN PANEL ═══ -->
+<div id="adminPanel">
+    <div id="adminBox">
+        <div id="adminHeader">
+            <h2>🗄️ Student Database — Admin View</h2>
+            <button class="close-btn" onclick="closeAdminPanel()">✕ Close</button>
+        </div>
+        <div id="adminBody">
+            <div id="adminLogin">
+                <p>Enter admin password to view student records</p>
+                <input type="password" id="adminPw" placeholder="Password" onkeydown="if(event.key==='Enter')checkAdminPw()"/>
+                <button onclick="checkAdminPw()">🔓 Login</button>
+                <div id="adminPwErr"></div>
+            </div>
+            <div id="adminDash" style="display:none">
+                <div class="admin-stats" id="adminStats"></div>
+                <div class="admin-toolbar">
+                    <input type="text" id="adminSearch" placeholder="🔍 Search name, roll, branch…" oninput="renderTable()"/>
+                    <button class="refresh-btn" onclick="loadAndRender()">🔄 Refresh</button>
+                    <button class="export-btn" onclick="exportCSV()">⬇️ Export CSV</button>
+                    <button class="clear-btn" onclick="clearAllData()">🗑️ Clear All</button>
+                </div>
+                <div class="admin-table-wrap">
+                    <table id="studentTable">
+                        <thead>
+                            <tr>
+                                <td>#</td><td>Name</td><td>Roll</td><td>Email</td>
+                                <td>Branch</td><td>Sem</td><td>Score</td><td>Total</td><td>%</td>
+                                <td>Rank ✓</td><td>LI/LD ✓</td><td>Relation ✓</td><td>LI/LD</td><td>Time</td>
+                            </tr>
+                        </thead>
+                        <tbody id="studentTbody"></tbody>
+                    </table>
+                </div>
+                <p id="noRecords" style="text-align:center;color:var(--muted);padding:30px;display:none">No records found.</p>
+            </div>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ STUDENT DASHBOARD PANEL ═══ -->
+<div id="studentDashPanel">
+    <div id="studentDashBox">
+        <div id="studentDashHeader">
+            <h2>📊 My Learning Dashboard</h2>
+            <button class="close-btn" onclick="closeStudentDash()">✕ Close</button>
+        </div>
+        <div id="studentDashBody">
+            <div id="studentDashContent"></div>
+        </div>
+    </div>
+</div>
+
+<script>
+/* ═══════════════════════════════════════
+   SUPABASE CONFIG & CLIENT
+═══════════════════════════════════════ */
+const ADMIN_PW = 'admin123';
+let SUPABASE_URL = localStorage.getItem('sb_url') || '';
+let SUPABASE_KEY = localStorage.getItem('sb_key') || '';
+let currentStudentId = null;
+let allStudents = [];
+let dbConnected = false;
+
+// Prefill config inputs
+window.addEventListener('DOMContentLoaded', () => {
+    if (SUPABASE_URL) document.getElementById('cfgUrl').value = SUPABASE_URL;
+    if (SUPABASE_KEY) document.getElementById('cfgKey').value = SUPABASE_KEY;
+    if (SUPABASE_URL && SUPABASE_KEY) checkDBConnection();
+    else setDBStatus('disconnected', 'No DB configured');
+});
+
+async function sbFetch(path, opts = {}) {
+    if (!SUPABASE_URL || !SUPABASE_KEY) throw new Error('No Supabase config');
+    const url = SUPABASE_URL.replace(/\/$/, '') + '/rest/v1' + path;
+    const res = await fetch(url, {
+        ...opts,
+        headers: {
+            'apikey': SUPABASE_KEY,
+            'Authorization': 'Bearer ' + SUPABASE_KEY,
+            'Content-Type': 'application/json',
+            'Prefer': opts.prefer || 'return=representation',
+            ...(opts.headers || {})
+        }
+    });
+    if (!res.ok) {
+        const err = await res.text();
+        throw new Error(err);
+    }
+    return res.status === 204 ? null : res.json();
+}
+
+async function checkDBConnection() {
+    setDBStatus('checking', 'Checking…');
+    try {
+        await sbFetch('/students?limit=1');
+        dbConnected = true;
+        setDBStatus('connected', 'DB Connected');
+    } catch(e) {
+        dbConnected = false;
+        setDBStatus('disconnected', 'DB Offline');
+    }
+}
+
+function setDBStatus(state, msg) {
+    const el = document.getElementById('dbStatus');
+    el.className = 'db-status ' + state;
+    el.innerHTML = `<div class="dot"></div> ${msg}`;
+}
+
+async function saveConfig() {
+    const url = document.getElementById('cfgUrl').value.trim();
+    const key = document.getElementById('cfgKey').value.trim();
+    if (!url || !key) { toast('❌ Enter both URL and Key'); return; }
+    SUPABASE_URL = url; SUPABASE_KEY = key;
+    localStorage.setItem('sb_url', url);
+    localStorage.setItem('sb_key', key);
+    const st = document.getElementById('cfgStatus');
+    st.textContent = 'Testing…'; st.style.display = 'block'; st.style.color = '#f59e0b';
+    try {
+        await sbFetch('/students?limit=1');
+        dbConnected = true;
+        st.textContent = '✅ Connected successfully!'; st.style.color = '#059669';
+        setDBStatus('connected', 'DB Connected');
+        toast('✅ Supabase connected!');
+    } catch(e) {
+        dbConnected = false;
+        st.textContent = '❌ Connection failed: ' + e.message; st.style.color = '#dc2626';
+        setDBStatus('disconnected', 'Connection Failed');
+    }
+}
+
+/* ═══════════════════════════════════════
+   DB OPERATIONS
+═══════════════════════════════════════ */
+async function insertStudent(data) {
+    if (!dbConnected) return null;
+    try {
+        const rows = await sbFetch('/students', {
+            method: 'POST',
+            body: JSON.stringify(data)
+        });
+        return rows && rows[0] ? rows[0].id : null;
+    } catch(e) { console.warn('Insert failed:', e); return null; }
+}
+
+async function updateStudent(id, data) {
+    if (!dbConnected || !id) return;
+    try {
+        await sbFetch(`/students?id=eq.${id}`, {
+            method: 'PATCH',
+            body: JSON.stringify(data),
+            prefer: 'return=minimal'
+        });
+    } catch(e) { console.warn('Update failed:', e); }
+}
+
+async function fetchAllStudents() {
+    try {
+        return await sbFetch('/students?order=login_time.desc') || [];
+    } catch(e) { console.warn('Fetch failed:', e); return []; }
+}
+
+async function deleteAllStudents() {
+    try {
+        await sbFetch('/students?id=neq.00000000-0000-0000-0000-000000000000', {
+            method: 'DELETE', prefer: 'return=minimal'
+        });
+    } catch(e) { console.warn('Delete failed:', e); }
+}
+
+/* ═══════════════════════════════════════
+   TOAST
+═══════════════════════════════════════ */
+function toast(msg) {
+    const t = document.getElementById('toast');
+    t.textContent = msg; t.classList.add('show');
+    setTimeout(() => t.classList.remove('show'), 2800);
+}
+
+/* ═══════════════════════════════════════
+   LOGIN
+═══════════════════════════════════════ */
+async function handleLogin() {
+    const name   = document.getElementById('sName').value.trim();
+    const roll   = document.getElementById('sRoll').value.trim();
+    const email  = document.getElementById('sEmail').value.trim();
+    const branch = document.getElementById('sBranch').value;
+    const sem    = document.getElementById('sSem').value;
+    const dob    = document.getElementById('sDob').value;
+    const emailRx = /^[^\s@]+@[^\s@]+\.[^\s@]+$/;
+
+    document.getElementById('emailErr').style.display = 'none';
+    document.getElementById('loginErr').style.display = 'none';
+
+    let valid = !!(name && roll && email && branch && sem && dob);
+    if (email && !emailRx.test(email)) {
+        document.getElementById('emailErr').style.display = 'block'; valid = false;
+    }
+    if (!valid) { document.getElementById('loginErr').style.display = 'block'; return; }
+
+    const sp = document.getElementById('loginSpinner');
+    sp.innerHTML = '<span class="spinner"></span>';
+
+    const record = {
+        name, roll, email, branch, sem, dob,
+        score: 0, total_marks: 0, li_ld_result: '—',
+        rank_correct: false, type_correct: false, relation_correct: false,
+        completed: false, login_time: new Date().toISOString(),
+        vectors: null, matrix: null
+    };
+
+    currentStudentId = await insertStudent(record);
+    sp.innerHTML = '';
+
+    if (dbConnected && currentStudentId) {
+        toast(`✅ Session saved to DB for ${name}`);
+    } else if (dbConnected) {
+        toast(`⚠️ Saved locally — DB insert may have failed`);
+    } else {
+        toast(`⚠️ DB offline — session not saved`);
+    }
+
+    const lp = document.getElementById('loginPage');
+    lp.classList.add('slide-out');
+    setTimeout(() => {
+        lp.style.display = 'none';
+        const app   = document.getElementById('mainApp');
+        const badge = document.getElementById('welcomeBadge');
+        badge.innerHTML = `👋 Welcome, <strong>${name}</strong> &nbsp;|&nbsp; Roll: <strong>${roll}</strong> &nbsp;|&nbsp; ${branch} – ${sem} Sem`;
+        badge.style.display = 'block';
+        app.style.display   = 'block';
+        app.classList.add('slide-in');
+        document.getElementById('studentDashBtn').style.display = 'flex';
+    }, 420);
+}
+
+document.addEventListener('keydown', e => {
+    if (e.key === 'Enter' && document.getElementById('loginPage').style.display !== 'none') handleLogin();
+});
+
+/* ═══════════════════════════════════════
+   PERSIST SCORE
+═══════════════════════════════════════ */
+async function persistScore() {
+    if (!currentStudentId || !dbConnected) return;
+    const tot = LD ? 3 : 2;
+    const isLD = typeof LD !== 'undefined' && LD;
+    const liLd = isLD ? 'LD' : (typeof LD !== 'undefined' ? 'LI' : '—');
+    const relCorrect = S - (RC?1:0) - (RTC?1:0) > 0;
+    await updateStudent(currentStudentId, {
+        score: S,
+        total_marks: tot,
+        li_ld_result: liLd,
+        rank_correct: RC === 1,
+        type_correct: RTC === 1,
+        relation_correct: relCorrect,
+        completed: true,
+        vectors: V.length ? V : null,
+        matrix: M.length ? M : null
+    });
+}
+
+/* ═══════════════════════════════════════
+   ADMIN PANEL
+═══════════════════════════════════════ */
+function openAdminPanel() { document.getElementById('adminPanel').classList.add('open') }
+function closeAdminPanel() { document.getElementById('adminPanel').classList.remove('open') }
+
+function checkAdminPw() {
+    if (document.getElementById('adminPw').value === ADMIN_PW) {
+        document.getElementById('adminLogin').style.display = 'none';
+        document.getElementById('adminDash').style.display = 'block';
+        loadAndRender();
+    } else {
+        document.getElementById('adminPwErr').textContent = '❌ Wrong password';
+    }
+}
+
+async function loadAndRender() {
+    if (!dbConnected) {
+        toast('❌ Database not connected');
+        document.getElementById('adminStats').innerHTML = '<div style="color:#dc2626;padding:10px">Database not connected. Configure Supabase first.</div>';
+        return;
+    }
+    allStudents = await fetchAllStudents();
+    renderStats(); renderTable();
+}
+
+function renderStats() {
+    const total    = allStudents.length;
+    const done     = allStudents.filter(s => s.completed).length;
+    const avgScore = total ? (allStudents.reduce((a,s)=>a+(s.score||0),0)/total).toFixed(1) : 0;
+    const perfect  = allStudents.filter(s => s.score === s.total_marks && s.total_marks > 0).length;
+    const rankOk   = allStudents.filter(s => s.rank_correct).length;
+    const typeOk   = allStudents.filter(s => s.type_correct).length;
+    document.getElementById('adminStats').innerHTML = `
+        <div class="stat-card"><div class="sv">${total}</div><div class="sl">Total Students</div></div>
+        <div class="stat-card"><div class="sv">${done}</div><div class="sl">Completed</div></div>
+        <div class="stat-card"><div class="sv">${avgScore}</div><div class="sl">Avg Score</div></div>
+        <div class="stat-card"><div class="sv">${perfect}</div><div class="sl">Perfect Score</div></div>
+        <div class="stat-card"><div class="sv">${rankOk}</div><div class="sl">Rank Correct</div></div>
+        <div class="stat-card"><div class="sv">${typeOk}</div><div class="sl">LI/LD Correct</div></div>
+    `;
+}
+
+function renderTable() {
+    const q = (document.getElementById('adminSearch').value || '').toLowerCase();
+    const filtered = allStudents.filter(s =>
+        !q || (s.name||'').toLowerCase().includes(q) ||
+        (s.roll||'').toLowerCase().includes(q) ||
+        (s.branch||'').toLowerCase().includes(q) ||
+        (s.email||'').toLowerCase().includes(q)
+    );
+    const tbody = document.getElementById('studentTbody');
+    const noRec = document.getElementById('noRecords');
+    if (!filtered.length) { tbody.innerHTML=''; noRec.style.display='block'; return; }
+    noRec.style.display='none';
+    tbody.innerHTML = filtered.map((s,i) => {
+        const pct = s.total_marks ? Math.round((s.score/s.total_marks)*100) : 0;
+        const pctBadge = pct===100?'green':pct>=66?'yellow':'red';
+        const liLdBadge = s.li_ld_result==='LI'?'blue':s.li_ld_result==='LD'?'yellow':'';
+        const dt = s.login_time ? new Date(s.login_time).toLocaleString('en-IN',{dateStyle:'short',timeStyle:'short'}) : '—';
+        const boolBadge = v => v ? '<span class="badge green">✓</span>' : '<span class="badge red">✗</span>';
+        return `<tr>
+            <td>${i+1}</td>
+            <td><strong>${s.name||'—'}</strong></td>
+            <td>${s.roll||'—'}</td>
+            <td style="font-size:11px">${s.email||'—'}</td>
+            <td>${s.branch||'—'}</td>
+            <td>${s.sem||'—'}</td>
+            <td><strong>${s.score??'—'}</strong></td>
+            <td>${s.total_marks||'—'}</td>
+            <td><span class="badge ${pctBadge}">${s.total_marks?pct+'%':'—'}</span></td>
+            <td>${boolBadge(s.rank_correct)}</td>
+            <td>${boolBadge(s.type_correct)}</td>
+            <td>${s.li_ld_result==='LD'?boolBadge(s.relation_correct):'<span class="badge blue">N/A</span>'}</td>
+            <td>${s.li_ld_result?`<span class="badge ${liLdBadge}">${s.li_ld_result}</span>`:'—'}</td>
+            <td style="font-size:11px;color:var(--muted)">${dt}</td>
+        </tr>`;
+    }).join('');
+}
+
+function exportCSV() {
+    const headers = ['#','Name','Roll','Email','Branch','Semester','Score','Total','%','Rank✓','Type✓','Relation✓','LI/LD','Login Time'];
+    const rows = allStudents.map((s,i) => {
+        const pct = s.total_marks ? Math.round((s.score/s.total_marks)*100) : 0;
+        const dt = s.login_time ? new Date(s.login_time).toLocaleString('en-IN') : '';
+        return [i+1, s.name, s.roll, s.email, s.branch, s.sem, s.score, s.total_marks, pct+'%',
+                s.rank_correct?'Yes':'No', s.type_correct?'Yes':'No', s.relation_correct?'Yes':'No',
+                s.li_ld_result, dt].map(v=>`"${v||''}"`).join(',');
+    });
+    const csv = [headers.join(','), ...rows].join('\n');
+    const a = document.createElement('a');
+    a.href = 'data:text/csv;charset=utf-8,' + encodeURIComponent(csv);
+    a.download = `students_${new Date().toISOString().slice(0,10)}.csv`;
+    a.click();
+    toast('📥 CSV downloaded!');
+}
+
+async function clearAllData() {
+    if (!confirm('⚠️ Delete ALL student records? This cannot be undone.')) return;
+    await deleteAllStudents();
+    allStudents = [];
+    renderStats(); renderTable();
+    toast('🗑️ All records cleared.');
+}
+
+/* ═══════════════════════════════════════
+   STUDENT DASHBOARD
+═══════════════════════════════════════ */
+function openStudentDash() {
+    document.getElementById('studentDashPanel').classList.add('open');
+    renderStudentDash();
+}
+function closeStudentDash() {
+    document.getElementById('studentDashPanel').classList.remove('open');
+}
+
+function renderStudentDash() {
+    const name   = document.getElementById('sName').value.trim();
+    const roll   = document.getElementById('sRoll').value.trim();
+    const branch = document.getElementById('sBranch').value;
+    const sem    = document.getElementById('sSem').value;
+    const tot    = LD ? 3 : 2;
+    const pct    = tot ? Math.round((S/tot)*100) : 0;
+    const conicPct = pct + '% ,#e5e7eb 0%';
+
+    // Question status
+    const q1 = RC===1 ? 'correct' : (document.getElementById('rankResult').innerHTML ? 'wrong' : 'pending');
+    const q2 = RTC===1 ? 'correct' : (document.getElementById('relationTypeResult').innerHTML ? 'wrong' : 'pending');
+    const relDone = S - (RC?1:0) - (RTC?1:0) > 0;
+    const q3Status = !LD ? null : (relDone ? 'correct' : (document.getElementById('relationResult').innerHTML ? 'wrong' : 'pending'));
+
+    const qIcon = s => s==='correct'?'✓':s==='wrong'?'✗':'⏳';
+    const qMark = s => s==='correct'?'<span class="q-marks">1/1</span>':s==='wrong'?'<span class="q-marks wrong">0/1</span>':'<span class="q-marks pending">?/1</span>';
+
+    const initial = name ? name[0].toUpperCase() : '?';
+
+    let perfMsg = '', perfColor = '#dc2626';
+    if (pct===100){ perfMsg='Excellent! 🎉'; perfColor='#16a34a'; }
+    else if (pct>=66){ perfMsg='Good Progress! 👍'; perfColor='#f59e0b'; }
+    else if (S>0){ perfMsg='Keep Going! 💪'; perfColor='#f59e0b'; }
+    else { perfMsg='Get Started!'; perfColor='#6b7280'; }
+
+    const vecInfo = V.length ? `<div style="margin-top:14px;background:#f9fafb;border-radius:10px;padding:14px">
+        <div style="font-weight:700;margin-bottom:8px;font-size:14px">📐 Your Vectors (${V.length} × ${V[0].length})</div>
+        <div style="display:flex;gap:8px;flex-wrap:wrap">${V.map((v,i)=>`<div style="background:#eef2ff;border-radius:8px;padding:8px 12px;font-size:13px"><strong>v${i+1}</strong>: [${v.join(', ')}]</div>`).join('')}</div>
+    </div>` : '';
+
+    document.getElementById('studentDashContent').innerHTML = `
+        <div class="student-profile-card">
+            <div class="student-avatar">${initial}</div>
+            <div class="student-info">
+                <h3>${name || 'Student'}</h3>
+                <p>Roll: <strong>${roll}</strong></p>
+                <div class="student-meta">
+                    <span class="badge blue">${branch||'—'}</span>
+                    <span class="badge purple">${sem||'—'} Semester</span>
+                    ${dbConnected && currentStudentId ? '<span class="badge green">✅ Synced to DB</span>' : '<span class="badge red">⚠️ Not in DB</span>'}
+                </div>
+            </div>
+        </div>
+
+        <div class="score-ring-wrap">
+            <div class="score-ring" style="background:conic-gradient(${pct>0?'#4f46e5':'#e5e7eb'} ${pct}%,#e5e7eb 0%)">
+                <div class="score-ring-inner">
+                    <div class="big">${S}/${tot}</div>
+                    <div class="small">${pct}%</div>
+                </div>
+            </div>
+        </div>
+        <div style="text-align:center;font-weight:700;font-size:16px;margin-bottom:20px;color:${perfColor}">${perfMsg}</div>
+
+        <div class="question-cards">
+            <div class="q-card">
+                <div class="q-icon ${q1}">${qIcon(q1)}</div>
+                <div>
+                    <div class="q-title">Q1 — Matrix Rank</div>
+                    <div class="q-desc">${q1==='correct'?`Correct! Rank = ${computeRank(M)}`:q1==='wrong'?`Incorrect. Correct rank = ${M.length?computeRank(M):'—'}`:'Submit the rank of the matrix to earn this mark.'}</div>
+                </div>
+                ${qMark(q1)}
+            </div>
+            <div class="q-card">
+                <div class="q-icon ${q2}">${qIcon(q2)}</div>
+                <div>
+                    <div class="q-title">Q2 — Linear Independence</div>
+                    <div class="q-desc">${q2==='correct'?`Correct! Vectors are ${LD?'Linearly Dependent (LD)':'Linearly Independent (LI)'}`:q2==='wrong'?'Incorrect classification.':'Classify the vectors as LI or LD.'}</div>
+                </div>
+                ${qMark(q2)}
+            </div>
+            ${q3Status !== null ? `<div class="q-card">
+                <div class="q-icon ${q3Status}">${qIcon(q3Status)}</div>
+                <div>
+                    <div class="q-title">Q3 — LD Relation</div>
+                    <div class="q-desc">${q3Status==='correct'?'Correct! Valid linear dependence relation found.':q3Status==='wrong'?'Relation does not satisfy c₁v₁ + c₂v₂ + … = 0.':'Enter the linear dependence relation coefficients.'}</div>
+                </div>
+                ${qMark(q3Status)}
+            </div>` : `<div class="q-card" style="opacity:.5">
+                <div class="q-icon pending">—</div>
+                <div><div class="q-title">Q3 — LD Relation</div><div class="q-desc">Not applicable (vectors are Linearly Independent).</div></div>
+                <span class="q-marks pending">N/A</span>
+            </div>`}
+        </div>
+
+        ${vecInfo}
+
+        <div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:12px;padding:16px;margin-top:14px;font-size:13px">
+            <strong style="color:#15803d">💡 Tips to improve:</strong><br>
+            ${q1!=='correct'?'• Use row reduction (RREF) to find the rank — count non-zero rows.<br>':''}
+            ${q2!=='correct'?'• If rank < number of vectors → LD. If rank = number of vectors → LI.<br>':''}
+            ${q3Status==='wrong'?'• For LD relation, find the null space of the matrix (free variable approach).<br>':''}
+            ${S===tot?'🎉 You got a perfect score! Great work!':'Keep practicing with different vector sets.'}
+        </div>
+    `;
+}
+
+/* ═══════════════════════════════════════
+   ORIGINAL APP LOGIC (unchanged + persist hooks)
+═══════════════════════════════════════ */
+let M=[],V=[],S=0,RC=0,RTC=0,LD=0;
+function generateInputs(){const n=+numVectors.value,d=+dimension.value;if(!n||!d)return alert("Enter valid values");vectorInputs.innerHTML="<h3 class='section-title'>Enter Vectors</h3>";for(let i=0;i<n;i++)vectorInputs.innerHTML+=`<label>Vector ${i+1}</label><input id="vec${i}" placeholder="1 2 3">`;makeMatrixBtn.style.display="block";rankSection.style.display=relationTypeSection.style.display=relationSection.style.display=scoreSection.style.display=matrixTitle.style.display="none";matrixOutput.innerHTML="";S=RC=RTC=LD=0;rankStepsOutput.style.display="none";}
+function createMatrix(){const n=+numVectors.value,d=+dimension.value,v=[];for(let i=0;i<n;i++){const vals=document.getElementById(`vec${i}`).value.trim().split(/\s+/).map(Number);if(vals.length!==d)return alert(`Vector ${i+1} must have ${d} values`);if(vals.some(isNaN))return alert(`Vector ${i+1} contains invalid numbers`);v.push(vals)}V=v;M=Array.from({length:d},(_,r)=>v.map(x=>x[r]));matrixOutput.innerHTML=`<table>${M.map(r=>`<tr>${r.map(x=>`<td>${x}</td>`).join('')}</tr>`).join('')}</table>`;matrixTitle.style.display=rankSection.style.display="block";relationTypeSection.style.display=relationSection.style.display=scoreSection.style.display="none";rankResult.innerHTML=relationTypeResult.innerHTML=relationResult.innerHTML="";S=RC=RTC=LD=0;rankStepsOutput.style.display="none";rankStepsOutput.innerHTML="";}
+function rref(m){m=m.map(r=>r.slice());let l=0;const e=1e-10;for(let r=0;r<m.length;r++){if(l>=m[0].length)return m;let i=r;while(Math.abs(m[i][l])<e){if(++i===m.length){i=r;if(++l===m[0].length)return m}}[m[r],m[i]]=[m[i],m[r]];const lv=m[r][l];m[r]=m[r].map(x=>x/lv);for(let i2=0;i2<m.length;i2++)if(i2!==r){const f=m[i2][l];m[i2]=m[i2].map((x,j)=>x-f*m[r][j])}l++}return m}
+function computeRank(m){if(!m||!m.length)return 0;return rref(m).filter(r=>r.some(v=>Math.abs(v)>1e-10)).length}
+function submitRank(){const u=+matrixRank.value,c=computeRank(M),n=V.length;if(isNaN(u)){rankResult.innerHTML=`<div class='error'>✖ Please enter a valid number</div>`;return}if(u===c){RC=1;S=1;rankResult.innerHTML=`<div class='success'>✔ Correct! Rank = ${c} (1 mark)</div>`;reenterRankBtn.style.display="none"}else{RC=0;S=0;rankResult.innerHTML=`<div class='error'>✖ Incorrect. Try again or proceed (0 marks)</div>`;reenterRankBtn.style.display="block"}LD=(c<n);relationTypeSection.style.display="block";relationSection.style.display="none";relationTypeResult.innerHTML="";reenterTypeBtn.style.display="none";relationResult.innerHTML="";reenterRelationBtn.style.display="none";solutionOutput.style.display="none";totalMarks.textContent=LD?"3":"2";scoreSection.style.display="block";score.textContent=S;updateBreakdown();persistScore();}
+function reenterRank(){rankResult.innerHTML="";reenterRankBtn.style.display="none";relationTypeSection.style.display=relationSection.style.display="none";matrixRank.value="";matrixRank.focus();rankStepsOutput.style.display="none";}
+function submitRelationType(u){const c=LD?'LD':'LI';if(u===c){RTC=1;S=RC?2:1;relationTypeResult.innerHTML=`<div class='success'>✔ Correct! Vectors are ${c} (1 mark)</div>`;reenterTypeBtn.style.display="none";if(LD){relationSection.style.display="block";relationResult.innerHTML="";reenterRelationBtn.style.display="none";solutionOutput.style.display="none"}else relationSection.style.display="none"}else{RTC=0;if(RC)S=1;relationTypeResult.innerHTML=`<div class='error'>✖ Incorrect. Try again or view solution later (0 marks)</div>`;reenterTypeBtn.style.display="block";relationSection.style.display="none"}score.textContent=S;updateBreakdown();persistScore();}
+function reenterType(){relationTypeResult.innerHTML="";reenterTypeBtn.style.display="none";relationSection.style.display="none";relationResult.innerHTML="";reenterRelationBtn.style.display="none";solutionOutput.style.display="none";}
+function submitRelation(){const c=relationInput.value.trim().split(/\s+/).map(Number),n=V.length,d=V[0].length;if(c.length!==n){relationResult.innerHTML=`<div class='error'>✖ You must enter ${n} coefficients (one for each vector)</div>`;return}if(c.some(isNaN)){relationResult.innerHTML=`<div class='error'>✖ Please enter valid numbers only</div>`;return}const e=1e-10;if(c.every(x=>Math.abs(x)<e)){relationResult.innerHTML=`<div class='error'>✖ Trivial relation (all zeros) doesn't count</div>`;return}let ok=1;const t=1e-8;for(let i=0;i<d;i++){let s=0;for(let j=0;j<n;j++)s+=c[j]*V[j][i];if(Math.abs(s)>t){ok=0;break}}if(ok){let m=0;if(RC)m++;if(RTC)m++;m++;S=m;relationResult.innerHTML=`<div class='success'>✔ Correct relation! The linear combination equals zero vector (1 mark)</div>`;reenterRelationBtn.style.display="none"}else{let m=0;if(RC)m++;if(RTC)m++;S=m;relationResult.innerHTML=`<div class='error'>✖ Incorrect relation. This combination does not equal the zero vector (0 marks)</div>`;reenterRelationBtn.style.display="block"}score.textContent=S;updateBreakdown();persistScore();}
+function reenterRelation(){relationResult.innerHTML="";reenterRelationBtn.style.display="none";solutionOutput.style.display="none";relationInput.value="";relationInput.focus();}
+function findLDRelation(){const n=V.length,d=V[0].length;let a=[];for(let i=0;i<d;i++){let r=[];for(let j=0;j<n;j++)r.push(V[j][i]);r.push(0);a.push(r)}const rd=rref(a),e=1e-10,pc=new Set();for(let i=0;i<rd.length;i++)for(let j=0;j<n;j++)if(Math.abs(rd[i][j])>e){pc.add(j);break}let fv=-1;for(let j=0;j<n;j++)if(!pc.has(j)){fv=j;break}let sol=new Array(n).fill(0);if(fv!==-1){sol[fv]=1;for(let i=rd.length-1;i>=0;i--){let piv=-1;for(let j=0;j<n;j++)if(Math.abs(rd[i][j])>e){piv=j;break}if(piv!==-1&&piv!==fv){let s=0;for(let j=piv+1;j<n;j++)s+=rd[i][j]*sol[j];sol[piv]=-s}}}const gcd=(a,b)=>b===0?a:gcd(b,a%b),lcm=(a,b)=>Math.abs(a*b)/gcd(a,b);let den=1;for(let i=0;i<sol.length;i++)if(Math.abs(sol[i])>e){const f=Math.abs(sol[i]),r=Math.round(f*1000)/1000,p=r.toString().split('.');if(p.length>1){const d=Math.pow(10,p[1].length);den=lcm(den,d)}}sol=sol.map(x=>Math.round(x*den));return sol;}
+function showSolution(){const sol=findLDRelation(),n=V.length;let eq=[];for(let i=0;i<n;i++)if(Math.abs(sol[i])>1e-10){const c=sol[i],s=c>0?'+':'';eq.push(`${s}${c}v₊${i+1}₋`)}let eqStr=eq.join(' ').replace(/₊/g,'<sub>').replace(/₋/g,'</sub>');if(eqStr.startsWith('+'))eqStr=eqStr.substring(1);let cs=sol.map(c=>Math.abs(c-Math.round(c))<1e-10?Math.round(c):c.toFixed(3)).join(' ');solutionOutput.innerHTML=`<h3 style="margin-top:0;color:#dc2626">Solution:</h3><p><strong>Coefficients:</strong> ${cs}</p><p><strong>Relation:</strong> ${eqStr} = 0</p><p style="margin-bottom:0;color:var(--muted);font-size:14px">This is one valid linear dependence relation. There may be other valid solutions.</p>`;solutionOutput.style.display="block";}
+function updateBreakdown(){let h='<ul style="margin:0;padding-left:20px">';h+=RC?'<li style="color:#16a34a;margin-bottom:8px">✔ <strong>Rank:</strong> 1/1 mark</li>':'<li style="color:#dc2626;margin-bottom:8px">✖ <strong>Rank:</strong> 0/1 mark</li>';h+=RTC?'<li style="color:#16a34a;margin-bottom:8px">✔ <strong>LI/LD Classification:</strong> 1/1 mark</li>':(relationTypeResult.innerHTML!==''?'<li style="color:#dc2626;margin-bottom:8px">✖ <strong>LI/LD Classification:</strong> 0/1 mark</li>':'<li style="color:#6b7280;margin-bottom:8px">⏳ <strong>LI/LD Classification:</strong> Pending</li>');if(LD){const rm=S-(RC?1:0)-(RTC?1:0);h+=rm>0?'<li style="color:#16a34a;margin-bottom:8px">✔ <strong>LD Relation:</strong> 1/1 mark</li>':(relationResult.innerHTML!==''?'<li style="color:#dc2626;margin-bottom:8px">✖ <strong>LD Relation:</strong> 0/1 mark</li>':'<li style="color:#6b7280;margin-bottom:8px">⏳ <strong>LD Relation:</strong> Pending</li>')}h+='</ul>';const tot=LD?3:2,pct=Math.round((S/tot)*100);let gc='#dc2626',gr='Needs Improvement';if(pct===100){gc='#16a34a';gr='Excellent! 🎉'}else if(pct>=66){gc='#f59e0b';gr='Good Progress! 👍'}h+=`<div style="margin-top:15px;padding:10px;background:#f9fafb;border-radius:6px;text-align:center"><strong style="color:${gc};font-size:18px">${pct}% - ${gr}</strong></div>`;breakdownDetails.innerHTML=h;}
+function showRankSteps(){let m=M.map(r=>r.slice());let html="<h3 style='margin-top:0;color:#4f46e5'>Row Reduction Steps:</h3>";const fmt=(mat)=>`<table style="margin-bottom:15px;background:#fff;border-radius:8px;overflow:hidden;box-shadow:0 4px 6px rgba(0,0,0,0.05)">`+mat.map(r=>`<tr>${r.map(x=>`<td style="padding:8px;border:1px solid #e5e7eb;text-align:center">${Math.abs(x)<1e-10?0:Number(x.toFixed(3))}</td>`).join('')}</tr>`).join('')+`</table>`;html+="<p style='margin-bottom:5px'><strong>Initial Matrix:</strong></p>"+fmt(m);let l=0;const e=1e-10;for(let r=0;r<m.length;r++){if(l>=m[0].length)break;let i=r;while(Math.abs(m[i][l])<e){i++;if(i===m.length){i=r;l++;if(l===m[0].length)break;}}if(l>=m[0].length)break;if(i!==r){[m[r],m[i]]=[m[i],m[r]];html+=`<p style='margin-bottom:5px;color:#6b7280;font-size:14px'>Swap R${r+1} and R${i+1}:</p>`+fmt(m);}const lv=m[r][l];if(Math.abs(lv-1)>e){m[r]=m[r].map(x=>x/lv);html+=`<p style='margin-bottom:5px;color:#6b7280;font-size:14px'>R${r+1} &rarr; R${r+1} / ${Number(lv.toFixed(3))}:</p>`+fmt(m);}let chg=false,stepOps="";for(let i2=0;i2<m.length;i2++){if(i2!==r){const f=m[i2][l];if(Math.abs(f)>e){m[i2]=m[i2].map((x,j)=>x-f*m[r][j]);stepOps+=`R${i2+1} &rarr; R${i2+1} - (${Number(f.toFixed(3))})R${r+1}<br>`;chg=true;}}}if(chg){html+=`<p style='margin-bottom:5px;color:#6b7280;font-size:14px'>${stepOps}</p>`+fmt(m);}l++;}let rank=m.filter(r=>r.some(v=>Math.abs(v)>1e-10)).length;html+=`<p style='margin-top:15px;font-size:16px'><strong>Final Rank = ${rank}</strong> (Number of non-zero rows)</p>`;const stepsDiv=document.getElementById('rankStepsOutput');stepsDiv.innerHTML=html;stepsDiv.style.display="block";}
+</script>
+</body>
+</html>
