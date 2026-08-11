@@ -1,0 +1,289 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+    <meta charset="UTF-8" />
+    <meta name="viewport" content="width=device-width,initial-scale=1.0" />
+    <title>Vector → Matrix Converter</title>
+    <meta name="description" content="Linear Algebra practice tool — solve vector/matrix problems, track your performance over time, and view detailed analytics." />
+    <script src="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/js/all.min.js" crossorigin="anonymous"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js@4.4.0/dist/chart.umd.min.js"></script>
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/style.css') }}">
+    <link rel="stylesheet" href="{{ url_for('static', filename='css/dashboard.css') }}">
+</head>
+<body>
+
+<!-- Backgrounds -->
+<div class="theory-layer">
+    <div class="space-grid"></div>
+    <div class="gravity-field one"></div><div class="gravity-field two"></div>
+    <div class="orbit one"></div><div class="orbit two"></div>
+    <div class="graph-wave one"></div><div class="graph-wave two"></div>
+    <div class="gravity-curve one"></div><div class="gravity-curve two"></div>
+    <div class="big-theory one">RANK</div><div class="big-theory two">ℝⁿ</div>
+</div>
+<div class="math-bg">
+    <span>∑</span><span>∫</span><span>λ</span><span>⊕</span><span>⊗</span><span>→</span><span>ℝ</span><span>μ</span><span>∇</span>
+</div>
+
+<!-- DB Status -->
+<div id="dbStatus" class="db-status checking"><div class="dot"></div> Checking DB…</div>
+
+<!-- Buttons -->
+<button id="terminateSessionBtn" onclick="terminateSession()" style="display:none;position:fixed;top:16px;left:16px;z-index:1000;width:auto;padding:8px 16px;font-size:13px;font-weight:700;background:linear-gradient(135deg,#dc2626,#f87171);border-radius:10px;box-shadow:0 4px 14px rgba(220,38,38,.4);color:#fff;border:none;cursor:pointer;">🛑 End Session</button>
+<button id="adminToggleBtn" onclick="openAdminPanel()">🗄️ Admin DB</button>
+<button id="backToDashBtn" onclick="backToDashboard()" style="display:none;position:fixed;top:16px;left:160px;z-index:1000;width:auto;padding:8px 16px;font-size:13px;font-weight:700;background:linear-gradient(135deg,#059669,#10b981);border-radius:10px;box-shadow:0 4px 14px rgba(5,150,105,.4);color:#fff;border:none;cursor:pointer;">📊 Dashboard</button>
+
+<!-- Toast -->
+<div id="toast"></div>
+
+<!-- ═══ LOGIN PAGE ═══ -->
+<div id="loginPage">
+    <div class="login-logo"><span>🎓</span></div>
+    <div class="login-title">Student Login</div>
+    <div class="login-sub">Enter your details to access the Linear Algebra Tool</div>
+
+    <div class="irow">
+        <div class="iwrap"><span class="ico">👤</span><input type="text" id="sName" placeholder="Full Name" autocomplete="name"/></div>
+        <div class="iwrap"><span class="ico">🔢</span><input type="text" id="sRoll" placeholder="Roll Number" autocomplete="off"/></div>
+    </div>
+    <div class="iwrap"><span class="ico">✉️</span><input type="email" id="sEmail" placeholder="Institute Email" autocomplete="email"/></div>
+    <div class="ferr" id="emailErr">Enter a valid email address.</div>
+    <div class="irow">
+        <div class="iwrap">
+            <span class="ico">📚</span>
+            <select id="sBranch"><option value="" disabled selected>Branch</option>
+                <option>AI &amp; ML</option><option>Computer Science</option><option>Data Science</option>
+                <option>Electronics</option><option>Mechanical</option><option>Civil</option><option>Other</option>
+            </select>
+        </div>
+        <div class="iwrap">
+            <span class="ico">📅</span>
+            <select id="sSem"><option value="" disabled selected>Semester</option>
+                <option>1st</option><option>2nd</option><option>3rd</option><option>4th</option>
+                <option>5th</option><option>6th</option><option>7th</option><option>8th</option>
+            </select>
+        </div>
+    </div>
+    <div class="iwrap"><span class="ico">🎂</span><input type="date" id="sDob" style="color:var(--muted)"/></div>
+    <div id="loginErr">⚠️ Please fill in all required fields correctly.</div>
+    <button class="login-btn" onclick="handleLogin()"><span>Start Session</span><span id="loginSpinner"></span><span>→</span></button>
+    <p style="text-align:center;font-size:12px;color:#9ca3af;margin-top:18px;margin-bottom:0">
+        Session data is saved securely for teacher review.
+    </p>
+</div>
+
+<!-- ═══ WELCOME BACK MODAL ═══ -->
+<div id="welcomeBackModal">
+    <div id="welcomeBackBox">
+        <div class="wb-header">
+            <div class="wb-avatar" id="wbAvatar"></div>
+            <div class="wb-info">
+                <h2 id="wbTitle">Welcome back!</h2>
+                <p id="wbSubtitle"></p>
+            </div>
+        </div>
+        <div class="wb-stats" id="wbStats"></div>
+        <div class="wb-choices">
+            <button class="wb-choice continue" onclick="goToDashboard()">
+                <div class="wb-choice-icon">📊</div>
+                <div class="wb-choice-label">Go to Dashboard</div>
+                <div class="wb-choice-desc">View your performance & start a new session</div>
+            </button>
+            <button class="wb-choice fresh" onclick="startSessionDirect('fresh')">
+                <div class="wb-choice-icon">🆕</div>
+                <div class="wb-choice-label">Quick Start</div>
+                <div class="wb-choice-desc">Jump straight into a new session</div>
+            </button>
+        </div>
+        <button class="wb-cancel" onclick="cancelWelcomeBack()">← Back to Login</button>
+    </div>
+</div>
+
+<!-- ═══ STUDENT DASHBOARD PAGE ═══ -->
+<div id="studentDashPage" style="display:none">
+    <div class="dash-container">
+        <!-- Profile Header -->
+        <div class="dash-profile-header">
+            <div class="dash-avatar" id="dashAvatar"></div>
+            <div class="dash-user-info">
+                <h1 id="dashUserName"></h1>
+                <p id="dashUserMeta"></p>
+            </div>
+            <button class="dash-new-session-btn" onclick="startNewSessionFromDash()">
+                🚀 Start New Session
+            </button>
+        </div>
+
+        <!-- Stats Row -->
+        <div class="dash-stats-row" id="dashStatsRow"></div>
+
+        <!-- Area of Improvement -->
+        <div class="dash-section">
+            <h2 class="dash-section-title">📈 Area of Improvement</h2>
+            <div class="improvement-cards" id="improvementCards"></div>
+        </div>
+
+        <!-- Progress Chart -->
+        <div class="dash-section" id="dashChartSection" style="display:none">
+            <h2 class="dash-section-title">📊 Performance Over Sessions</h2>
+            <div class="dash-chart-wrap">
+                <canvas id="dashProgressChart"></canvas>
+            </div>
+        </div>
+
+        <!-- Session History -->
+        <div class="dash-section">
+            <h2 class="dash-section-title">📋 Session History</h2>
+            <div class="dash-session-list" id="dashSessionList"></div>
+        </div>
+
+        <!-- Logout -->
+        <div style="text-align:center;margin-top:24px">
+            <button class="dash-logout-btn" onclick="logoutStudent()">🔓 Logout</button>
+        </div>
+    </div>
+</div>
+
+<!-- ═══ MAIN APP ═══ -->
+<div class="container" id="mainApp" style="display:none">
+    <div id="welcomeBadge"></div>
+    <h1>Vector → Matrix Converter</h1>
+    <p class="subtitle">Convert vectors into a matrix and verify its rank</p>
+    <label>Number of Vectors</label><input type="number" id="numVectors" min="1"/>
+    <label>Dimension of Each Vector</label><input type="number" id="dimension" min="1"/>
+    <button onclick="generateInputs()">Generate Input Fields</button>
+    <div id="vectorInputs"></div>
+    <button id="makeMatrixBtn" onclick="createMatrix()" style="display:none;margin-top:15px">Show Matrix</button>
+    <h2 id="matrixTitle" style="display:none">Matrix</h2>
+    <div id="matrixOutput"></div>
+    <div id="rankSection" style="display:none">
+        <h2>Enter Rank of the Matrix</h2>
+        <input type="number" id="matrixRank" min="0"/>
+        <div style="display:flex;gap:10px;margin-bottom:15px">
+            <button onclick="submitRank()" style="flex:1">Submit Rank</button>
+            <button onclick="showRankSteps()" style="flex:1;background:linear-gradient(135deg,#8b5cf6,#a78bfa)">Show Steps</button>
+        </div>
+        <div id="rankResult"></div>
+        <button id="reenterRankBtn" onclick="reenterRank()" style="display:none;margin-top:10px;background:linear-gradient(135deg,#f59e0b,#f97316)">Re-enter Rank</button>
+        <div id="rankStepsOutput" style="display:none;margin-top:15px;padding:15px;background:#fef2f2;border-left:4px solid #4f46e5;border-radius:8px;overflow-x:auto;"></div>
+    </div>
+    <div id="relationTypeSection" style="display:none">
+        <h2>Are the vectors Linearly Independent or Dependent?</h2>
+        <div style="display:flex;gap:10px;margin-bottom:15px">
+            <button onclick="submitRelationType('LI')" style="flex:1">Linearly Independent (LI)</button>
+            <button onclick="submitRelationType('LD')" style="flex:1">Linearly Dependent (LD)</button>
+        </div>
+        <div id="relationTypeResult"></div>
+        <button id="reenterTypeBtn" onclick="reenterType()" style="display:none;margin-top:10px;background:linear-gradient(135deg,#f59e0b,#f97316)">Re-enter Type</button>
+    </div>
+    <div id="relationSection" style="display:none">
+        <h2>Linear Dependence Relation</h2>
+        <p style="color:var(--muted);margin-bottom:15px">Enter the relation as coefficients (e.g., "2 -3 1" means 2v₁ - 3v₂ + 1v₃ = 0)</p>
+        <input type="text" id="relationInput" placeholder="c₁ c₂ c₃ ..."/>
+        <div style="display:flex;gap:10px;margin-bottom:15px">
+            <button onclick="submitRelation()" style="flex:1">Submit Relation</button>
+            <button onclick="showSolution()" style="flex:1;background:linear-gradient(135deg,#8b5cf6,#a78bfa)">Show Solution</button>
+        </div>
+        <div id="relationResult"></div>
+        <button id="reenterRelationBtn" onclick="reenterRelation()" style="display:none;margin-top:10px;background:linear-gradient(135deg,#f59e0b,#f97316)">Re-enter Relation</button>
+        <div id="solutionOutput" style="display:none;margin-top:15px;padding:15px;background:#fef2f2;border-left:4px solid #dc2626;border-radius:8px"></div>
+    </div>
+    <div id="scoreSection" style="display:none;margin-top:30px;padding:20px;background:linear-gradient(135deg,#eef2ff,#f0f9ff);border-radius:12px">
+        <h2 style="margin-top:0">Score: <span id="score">0</span> / <span id="totalMarks">2</span> marks</h2>
+        <div id="breakdown" style="margin-top:15px;padding:15px;background:#fff;border-radius:8px;border-left:4px solid #4f46e5">
+            <h3 style="margin-top:0;font-size:16px;color:#4f46e5">Score Breakdown:</h3>
+            <div id="breakdownDetails"></div>
+        </div>
+        <button id="nextProblemBtn" onclick="nextProblem()" style="display:none;margin-top:20px;background:linear-gradient(135deg,#059669,#10b981)">Next Problem ➔</button>
+    </div>
+</div>
+
+<!-- ═══ ADMIN PANEL ═══ -->
+<div id="adminPanel">
+    <div id="adminBox">
+        <div id="adminHeader">
+            <h2>🗄️ Admin Dashboard — Performance Analytics</h2>
+            <button class="close-btn" onclick="closeAdminPanel()">✕ Close</button>
+        </div>
+        <div id="adminBody">
+            <div id="adminLogin">
+                <p>Enter admin password to view student records</p>
+                <input type="password" id="adminPw" placeholder="Password" onkeydown="if(event.key==='Enter')checkAdminPw()"/>
+                <button onclick="checkAdminPw()">🔓 Login</button>
+                <div id="adminPwErr"></div>
+            </div>
+            <div id="adminDash" style="display:none">
+                <!-- Stats Cards -->
+                <div class="admin-stats" id="adminStats"></div>
+
+                <!-- Filters -->
+                <div class="admin-filters">
+                    <input type="text" id="adminSearch" placeholder="🔍 Search name, roll, email…" oninput="filterAdminTable()"/>
+                    <select id="adminFilterBranch" onchange="filterAdminTable()">
+                        <option value="">All Branches</option>
+                        <option>AI &amp; ML</option><option>Computer Science</option><option>Data Science</option>
+                        <option>Electronics</option><option>Mechanical</option><option>Civil</option><option>Other</option>
+                    </select>
+                    <select id="adminFilterSem" onchange="filterAdminTable()">
+                        <option value="">All Semesters</option>
+                        <option>1st</option><option>2nd</option><option>3rd</option><option>4th</option>
+                        <option>5th</option><option>6th</option><option>7th</option><option>8th</option>
+                    </select>
+                    <input type="date" id="adminFilterFrom" onchange="filterAdminTable()" title="From date"/>
+                    <input type="date" id="adminFilterTo" onchange="filterAdminTable()" title="To date"/>
+                </div>
+
+                <!-- Toolbar -->
+                <div class="admin-toolbar">
+                    <button class="refresh-btn" onclick="loadAdminData()">🔄 Refresh</button>
+                    <button class="export-btn" onclick="exportCSV()">⬇️ Export CSV</button>
+                    <button class="clear-btn" onclick="clearAllData()">🗑️ Clear All</button>
+                </div>
+
+                <!-- Trend Chart -->
+                <div class="chart-container">
+                    <h3>📊 Performance Trends</h3>
+                    <canvas id="adminTrendChart"></canvas>
+                </div>
+
+                <!-- Users Table -->
+                <div class="admin-table-wrap">
+                    <table id="adminUserTable">
+                        <thead>
+                            <tr>
+                                <td>#</td><td>Name</td><td>Roll</td><td>Email</td>
+                                <td>Branch</td><td>Sem</td><td>Sessions</td>
+                                <td>Questions</td><td>Avg %</td><td>Best %</td><td>Joined</td><td></td>
+                            </tr>
+                        </thead>
+                        <tbody id="adminUserTbody"></tbody>
+                    </table>
+                </div>
+                <p id="noRecords" style="text-align:center;color:var(--muted);padding:30px;display:none">No records found.</p>
+
+                <!-- Expandable session details -->
+                <div id="adminSessionDetail" style="display:none">
+                    <div class="session-detail-header">
+                        <h3 id="sessionDetailTitle"></h3>
+                        <button class="close-detail-btn" onclick="closeSessionDetail()">← Back</button>
+                    </div>
+                    <div class="session-detail-body" id="sessionDetailBody"></div>
+                </div>
+
+                <!-- Question detail drill-down -->
+                <div id="adminQuestionDetail" style="display:none">
+                    <div class="session-detail-header">
+                        <h3 id="questionDetailTitle"></h3>
+                        <button class="close-detail-btn" onclick="closeQuestionDetail()">← Back to Sessions</button>
+                    </div>
+                    <div class="question-detail-body" id="questionDetailBody"></div>
+                </div>
+            </div>
+        </div>
+    </div>
+</div>
+
+<script src="{{ url_for('static', filename='js/script.js') }}"></script>
+<script src="{{ url_for('static', filename='js/dashboard.js') }}"></script>
+</body>
+</html>
